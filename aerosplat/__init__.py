@@ -1,6 +1,4 @@
 from .symbolic import *
-from .aerosplat import *
+from .aerosplat import AeroSplat
 from .boundary import LineBoundary
-
-def init_test():
-    return True
+from .problem import AeroSplatProblem
