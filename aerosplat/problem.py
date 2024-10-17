@@ -1,5 +1,6 @@
 # Create Problem Definition Class
 import numpy as np
+from scipy.stats.qmc import LatinHypercube
 import random
 from .aerosplat import AeroSplat
 
@@ -16,6 +17,11 @@ class AeroSplatProblem:
         self.domain_y = np.array(domain_y)
         self.domain_z = np.array(domain_z)
         self.boundaries = boundaries
+
+        # Initialize the latin hypercube sampler, which assures distributions are uniform on multiple dimensions
+        self.sampler = LatinHypercube(d=self.ndims)
+
+        # Determine to initialize with a spawned set of AeroSplat objects
         if spawn:
             self.spawn_random_splats(spawn)
 
@@ -38,7 +44,7 @@ class AeroSplatProblem:
         z = random.uniform(*self.domain_z)
         return np.array([x, y, z]) if self.ndims == 3 else np.array([x, y])
     
-    def point_at_weights(self, weight_x, weight_y, weight_z):
+    def point_at_weights(self, weight_x, weight_y, weight_z=0):
         weights = weight_x, weight_y, weight_z
         domains = self.domain_x, self.domain_y, self.domain_z
         return [(1-w)*d[0] + w*d[1] for w, d in zip(weights, domains)]
@@ -50,18 +56,21 @@ class AeroSplatProblem:
         # grid will be in [page->z][row->y][column->x] index ordering
         return grid if self.ndims == 3 else grid[0, :, :, :2]
 
-    def random_splat(self):
+    def random_splat(self, point=None):
         return AeroSplat(
-            position=self.point_at_random(),
+            position=point if point else self.point_at_random(),
             velocity=np.array(np.random.normal(size=self.ndims)), #np.zeros(self.ndims),
             scale=0.1 + 0.2*np.array(np.random.uniform(size=self.ndims)), #0.1*np.ones(self.ndims),
-            orientation=[0] if self.ndims == 2 else [1, 0, 0, 0]
+            orientation=[np.random.uniform(-3.141, 3.141)] if self.ndims == 2 else [1, 0, 0, 0]
+            # TODO: random orientation in 3D mode
         )
 
     def spawn_random_splats(self, quantity, clear=True):
         self.splats = [] if clear else self.splats
-        for _ in range(quantity):
-            self.splats.append(self.random_splat())
+        weights = self.sampler.random(n=quantity)  # weights are from latin hypercube sampler
+        for i in range(quantity):
+            point = self.point_at_weights(*weights[i, :])[:self.ndims]
+            self.splats.append(self.random_splat(point))
 
     def velocity_on_grid(self, nx=10, ny=10, nz=1):
         grid = self.point_grid(nx, ny, nz)
