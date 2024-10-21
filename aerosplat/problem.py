@@ -60,7 +60,7 @@ class AeroSplatProblem:
         return AeroSplat(
             position=point if point else self.point_at_random(),
             velocity=np.array(np.random.normal(size=self.ndims)), #np.zeros(self.ndims),
-            scale=0.1 + 0.2*np.array(np.random.uniform(size=self.ndims)), #0.1*np.ones(self.ndims),
+            scale=0.2*np.array(np.random.uniform(size=self.ndims)), #0.1*np.ones(self.ndims),
             orientation=[np.random.uniform(-3.141, 3.141)] if self.ndims == 2 else [1, 0, 0, 0]
             # TODO: random orientation in 3D mode
         )
