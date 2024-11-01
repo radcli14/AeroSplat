@@ -28,7 +28,7 @@ A distance vector
 \boldsymbol{d}_{ik} = \boldsymbol{r}_k - \boldsymbol{r}_i
 ```
 
-defines the vector from the center of the splat to the point of evaluation.
+defines the vector from the center of the $i^{th}$ splat to the $k^{th}$ point of evaluation.
 If we define
 
 ```math
@@ -86,13 +86,13 @@ For a model in 3D, where the orientation vector $\boldsymbol{q}= \left( q_w, q_x
 \left[\begin{matrix}- 2 q_{y}^{2} - 2 q_{z}^{2} + 1 & - 2 q_{w} q_{z} + 2 q_{x} q_{y} & 2 q_{w} q_{y} + 2 q_{x} q_{z}\\2 q_{w} q_{z} + 2 q_{x} q_{y} & - 2 q_{x}^{2} - 2 q_{z}^{2} + 1 & - 2 q_{w} q_{x} + 2 q_{y} q_{z}\\- 2 q_{w} q_{y} + 2 q_{x} q_{z} & 2 q_{w} q_{x} + 2 q_{y} q_{z} & - 2 q_{x}^{2} - 2 q_{y}^{2} + 1\end{matrix}\right].
 ```
 
-Using either of these matrices, we may express the $\boldsymbol{d}$ in the rotated frame as 
+Using either of these matrices, we may express the distance $\boldsymbol{d}_{ik}$ in the rotated frame as 
 
 ```math
-\boldsymbol{c}_{ik} = \mathbf{R}_i \boldsymbol{c}_{ik},
+\boldsymbol{c}_{ik} = \mathbf{R}_i \boldsymbol{d}_{ik},
 ```
 
-using the $\boldsymbol{c}$ to represent the distance vector in the rotated frame.
+using the $\boldsymbol{c}_{ik}$ to represent the distance vector in the rotated frame for the $k^{th}$ evaluation point relative to the $i^{th}$ splat.
 
 
 ### Scaling
@@ -132,6 +132,9 @@ Given the equations above for how to position, rotate, and scale an individual s
 
 and thus we may calculate the gaussian $g_{ik}$ as defined above given the splat properties $\boldsymbol{x}_i$ and evaluation location $\boldsymbol{r}_k$.
 
+```
+g_{ik} = e^{-0.5 \sigma^2_{ik}}
+```
 
 ## Velocity
 
@@ -152,3 +155,9 @@ Supposing we have several splats, where we will represent the quantity $n$, then
 ```math
 \boldsymbol{v}_k = \sum_{i=1}^n \boldsymbol{v}_{i} g_{ik}.
 ```
+
+### Boundary Error
+
+
+### Volume Error
+
