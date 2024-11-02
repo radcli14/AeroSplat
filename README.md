@@ -158,6 +158,35 @@ Supposing we have several splats, where we will represent the quantity $n$, then
 
 ### Boundary Error
 
+We will define a boundary condition where the velocity is specified as
+
+```math
+\boldsymbol{v}_b = u_b \hat{\boldsymbol{i}} + v_b \hat{\boldsymbol{j}} + w_b \hat{\boldsymbol{k}}
+```
+
+using the $b$ subscript to represent an individual boundary, which may exist on either a line or surface.
+In general, this will be some fluid source, for which one or more of the terms is non-zero, or a non-slip boundary on an object's surface where are of the terms are zero.
+A velocity error vector $\boldsymbol{e}_{bk}$ is defined on the $b^{th}$ boundary for the $k^{th}$ evaluation point,
+
+```math
+\boldsymbol{e}_{bk} = \boldsymbol{v}_k - \boldsymbol{v}_b,
+```
+
+and there is an associated error variance
+
+```math
+\lambda_{bk} = \boldsymbol{e}_{bk} \cdot \boldsymbol{e}_{bk}.
+```
+
+As part of defining our loss function for optimizing the properties of our splats, we would intend to integrate our error variance over the boundary line or surface, so our loss at the $b^{th}$ boundary is
+
+```math
+L_b = \int_b \lambda_{bk} \textnormal{d} b .
+```
+
+In the case of a line boundary ...
+
+In the case of a surface boundary ...
 
 ### Volume Error
 
