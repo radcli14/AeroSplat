@@ -132,7 +132,7 @@ Given the equations above for how to position, rotate, and scale an individual s
 
 and thus we may calculate the gaussian $g_{ik}$ as defined above given the splat properties $\boldsymbol{x}_i$ and evaluation location $\boldsymbol{r}_k$.
 
-```
+```math
 g_{ik} = e^{-0.5 \sigma^2_{ik}}
 ```
 
@@ -184,7 +184,27 @@ As part of defining our loss function for optimizing the properties of our splat
 L_b = \int_b \lambda_{bk} \textnormal{d} b .
 ```
 
-In the case of a line boundary ...
+In the case of a straight line boundary that is defined by two points, 
+$\boldsymbol{r}_{0b} = x_{0b} \hat{\boldsymbol{i}} + y_{0b} \hat{\boldsymbol{j}} + z_{0b} \hat{\boldsymbol{k}}$, 
+and 
+$\boldsymbol{r}_{1b} = x_{1b} \hat{\boldsymbol{i}} + y_{1b} \hat{\boldsymbol{j}} + z_{1b} \hat{\boldsymbol{k}}$, 
+we may evaluate the integral over the line by first expressing the boundary coordinates as a function of a single parameter $t$.
+In this case, we want to obtain a $\boldsymbol{r}_{0b}$ when $t=0$, and $\boldsymbol{r}_{1b}$ when $t=1$. giving the boundary equation 
+
+```math
+\boldsymbol{r}_b(t) =
+ \left[ x_{0b} + (x_{1b} - x_{0b})t \right] \hat{\boldsymbol{i}} +
+ \left[ y_{0b} + (y_{1b} - y_{0b})t \right] \hat{\boldsymbol{j}} +
+ \left[ z_{0b} + (z_{1b} - z_{0b})t \right] \hat{\boldsymbol{k}} .
+```
+Similar to how we previously defined the differential distance to the $k^{th}$ evaluation point $d_{ik}$ from the center of the $i^{th}$ splat, we may also define a distance function from the $b^{th}$ boundary as a function of $t$ as
+
+```math
+d_{ib}(t) =
+ \left[ x_{0b} + (x_{1b} - x_{0b})t - x_i \right] \hat{\boldsymbol{i}} +
+ \left[ y_{0b} + (y_{1b} - y_{0b})t - y_i \right] \hat{\boldsymbol{j}} +
+ \left[ z_{0b} + (z_{1b} - z_{0b})t - z_i \right] \hat{\boldsymbol{k}} .
+```
 
 In the case of a surface boundary ...
 
