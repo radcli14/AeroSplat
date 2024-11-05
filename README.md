@@ -108,7 +108,7 @@ using the $\boldsymbol{b}$ to represent the _scaled_ distance vector in the rota
 It is also convenient to write the above expression in matrix notation, or 
 
 ```math
-\boldsymbol{b}_{ik} = \boldsymbol{s}_i^T \mathbf{R}_i\boldsymbol{d}_{ik},
+\boldsymbol{b}_{ik} = \boldsymbol{s}_i^T \mathbf{R}_i \boldsymbol{d}_{ik},
 ```
 
 where $(\cdot)^T$ is the matrix or vector transpose.
@@ -122,7 +122,7 @@ For example, in the 2D model, we can expand this as
 ```
 
 
-### Variance
+### Variance and Covariance
 
 Given the equations above for how to position, rotate, and scale an individual splat, we can write the variance
 
@@ -130,10 +130,22 @@ Given the equations above for how to position, rotate, and scale an individual s
 \sigma^2_{ik} = \boldsymbol{b}_{ik} \cdot \boldsymbol{b}_{ik},
 ```
 
-and thus we may calculate the gaussian $g_{ik}$ as defined above given the splat properties $\boldsymbol{x}_i$ and evaluation location $\boldsymbol{r}_k$.
+and thus we may calculate the gaussian $g_{ik}$ as defined above given the splat properties $\boldsymbol{x}_i$ and evaluation location $\boldsymbol{r}_k$ as
 
 ```math
-g_{ik} = e^{-0.5 \sigma^2_{ik}}
+g_{ik} = e^{-0.5 \sigma^2_{ik}}.
+```
+
+We may also define a covariance matrix for our splat
+
+```math
+\mathbf{\Sigma}_i = \mathbf{R}_i^T \boldsymbol{s}_i \boldsymbol{s}_i^T \mathbf{R}_i
+```
+
+such that our variance equation becomes
+
+```math
+\sigma^2_{ik} = \boldsymbol{d}_{ik}^T \mathbf{\Sigma}_i \boldsymbol{d}_{ik}
 ```
 
 ## Velocity
@@ -181,22 +193,31 @@ and there is an associated error variance
 As part of defining our loss function for optimizing the properties of our splats, we would intend to integrate our error variance over the boundary line or surface, so our loss at the $b^{th}$ boundary is
 
 ```math
-L_b = \int_b \lambda_{bk} \textnormal{d} b .
+L_b = \int_b \lambda_{bk} \textnormal{d} \boldsymbol{b} .
 ```
 
 In the case of a straight line boundary that is defined by two points, 
-$\boldsymbol{r}_{0b} = x_{0b} \hat{\boldsymbol{i}} + y_{0b} \hat{\boldsymbol{j}} + z_{0b} \hat{\boldsymbol{k}}$, 
+```math
+\boldsymbol{r}_{0b} = x_{0b} \hat{\boldsymbol{i}} + y_{0b} \hat{\boldsymbol{j}} + z_{0b} \hat{\boldsymbol{k}},
+```
 and 
-$\boldsymbol{r}_{1b} = x_{1b} \hat{\boldsymbol{i}} + y_{1b} \hat{\boldsymbol{j}} + z_{1b} \hat{\boldsymbol{k}}$, 
+```math
+\boldsymbol{r}_{1b} = x_{1b} \hat{\boldsymbol{i}} + y_{1b} \hat{\boldsymbol{j}} + z_{1b} \hat{\boldsymbol{k}},
+``` 
 we may evaluate the integral over the line by first expressing the boundary coordinates as a function of a single parameter $t$.
-In this case, we want to obtain a $\boldsymbol{r}_{0b}$ when $t=0$, and $\boldsymbol{r}_{1b}$ when $t=1$. giving the boundary equation 
+In this case, we want to obtain $\boldsymbol{r}_{0b}$ when $t=0$, and $\boldsymbol{r}_{1b}$ when $t=1$. giving the boundary equation 
 
 ```math
-\boldsymbol{r}_b(t) =
+\boldsymbol{b}(t) =
  \left[ x_{0b} + (x_{1b} - x_{0b})t \right] \hat{\boldsymbol{i}} +
  \left[ y_{0b} + (y_{1b} - y_{0b})t \right] \hat{\boldsymbol{j}} +
  \left[ z_{0b} + (z_{1b} - z_{0b})t \right] \hat{\boldsymbol{k}} .
 ```
+With this boundary function, we can recast the integral on the boundary as
+```math
+L_b = l_b \int_0^1 \lambda_{b}(t) \textnormal{d}t
+```
+where $l_b$ is the distance between the two end-points of the boundary, and $\lambda_{b}$ is equivalent to $\lambda_{bk}$ but mapped coordinates of $t$.
 Similar to how we previously defined the differential distance to the $k^{th}$ evaluation point $d_{ik}$ from the center of the $i^{th}$ splat, we may also define a distance function from the $b^{th}$ boundary as a function of $t$ as
 
 ```math
@@ -205,6 +226,34 @@ d_{ib}(t) =
  \left[ y_{0b} + (y_{1b} - y_{0b})t - y_i \right] \hat{\boldsymbol{j}} +
  \left[ z_{0b} + (z_{1b} - z_{0b})t - z_i \right] \hat{\boldsymbol{k}} .
 ```
+
+which we can use to calculate a velocity along the boundary
+
+```math
+\boldsymbol{v}(t) = \sum_{i=1}^n \boldsymbol{v}_{i} g_{ib}(t),
+```
+
+which is also a function of $t$.
+The Gaussian $g_{ib}(t)$ would now use the distance term $d_{ib}(t)$, which, if we expand our Gaussian, and use the expression if the form utilizing the covariance matrix $\mathbf{\Sigma}_i$, we have
+```math
+g_{ib}(t) = e^{-0.5 \boldsymbol{d}_{ib}(t)^T \mathbf{\Sigma}_i \boldsymbol{d}_{ib}(t)}.
+```
+We can now write the velocity error term on the line boundary as a function of $t$,
+```math
+\boldsymbol{e}_b(t) = \boldsymbol{v}(t) - \boldsymbol{v}_b.
+```
+and correspondingly the error variance
+```math
+\lambda_b(t) = \boldsymbol{e}_b(t) \cdot \boldsymbol{e}_b(t).
+```
+To integrate this error variance ...
+
+
+<!--
+```math
+\boldsymbol{v}(t) = \sum_{i=1}^n \boldsymbol{v}_i e^{-0.5 \boldsymbol{d}_{ib}(t)^T \mathbf{\Sigma}_i \boldsymbol{d}_{ib}(t)}
+```
+-->
 
 In the case of a surface boundary ...
 
