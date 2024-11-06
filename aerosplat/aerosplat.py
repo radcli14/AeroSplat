@@ -55,9 +55,14 @@ class AeroSplat:
     def velocity_at(self, position):
         return self.velocity * self.gaussian_at(position)
     
+    def velocity_gradient_matrix_at(self, position):
+        f = velocity_gradient_matrix_fcn_2d if self.is2d else velocity_gradient_matrix_fcn_3d
+        gradient_matrix = f(*self.properties_at(position))
+        return np.array(gradient_matrix)
+
     def velocity_gradient_at(self, position):
         return self.velocity * self.gaussian_gradient_at(position)
-
+    
     def differential_velocity_at(self, position):
         f = diff_velocity_fcn_2d if self.is2d else diff_velocity_fcn_3d
         return f(*self.properties_at(position))

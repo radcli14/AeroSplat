@@ -1,6 +1,6 @@
 # Create Symbolic Functions
 import numpy as np
-from sympy import symbols, exp, lambdify, diff, Quaternion, Matrix
+from sympy import symbols, exp, lambdify, diff, integrate, Quaternion, Matrix
 
 ## Properties of the splat
 
@@ -86,7 +86,7 @@ def variance_eqn(orientation):
     rotation_matrix = rotation_matrix_eqn(orientation)
     idx = idx_dimension(orientation)
     dx = rotation_matrix[:idx, :idx] @ (eval_at_position[:idx] - position[:idx])
-    s = dx / scale[:idx]
+    s = dx * scale[:idx]
     return np.sum(s**2)
 
 variance_eqn_2d = variance_eqn(orientation_2d)
@@ -111,6 +111,11 @@ variance_gradient_eqn_3d = [diff(variance_eqn_3d, variable) for variable in eval
 variance_gradient_fcn_3d = lambdify(splat_properties_3d + eval_coords_3d, variance_gradient_eqn_3d)
 
 
+## Equation for variance integrals
+
+int_variance_eqn_2d = integrate(integrate(variance_eqn_2d, yp), xp)
+int_variance_fcn_2d = lambdify(splat_properties_2d, int_variance_eqn_2d)
+
 ## Equation for gaussian derivatives
 
 diff_gaussian_eqn_2d = [diff(gaussian(variance_eqn_2d), variable) for variable in splat_properties_2d]
@@ -132,6 +137,19 @@ velocity_fcn_2d = lambdify(splat_properties_2d + eval_coords_2d, list(velocity_e
 velocity_eqn_3d = velocity_eqn(orientation_3d)
 velocity_fcn_3d = lambdify(splat_properties_3d + eval_coords_3d, list(velocity_eqn_3d))
 
+## Equations for velocity gradients
+
+velocity_gradient_matrix_eqn_2d = [[diff(vk, pk) for vk in velocity_eqn_2d] for pk in eval_coords_2d]
+velocity_gradient_matrix_fcn_2d = lambdify(splat_properties_2d + eval_coords_2d, velocity_gradient_matrix_eqn_2d)
+
+velocity_gradient_matrix_eqn_3d = [[diff(vk, pk) for vk in velocity_eqn_3d] for pk in eval_coords_3d]
+velocity_gradient_matrix_fcn_3d = lambdify(splat_properties_3d + eval_coords_3d, velocity_gradient_matrix_eqn_3d)
+
+velocity_gradient_eqn_2d = [velocity_gradient_matrix_eqn_2d[i][i] for i in range(2)]
+velocity_gradient_fcn_2d = lambdify(splat_properties_2d + eval_coords_2d, velocity_gradient_eqn_2d)
+
+velocity_gradient_eqn_3d = [velocity_gradient_matrix_eqn_3d[i][i] for i in range(3)]
+velocity_gradient_fcn_3d = lambdify(splat_properties_3d + eval_coords_3d, velocity_gradient_eqn_3d)
 
 ## Equations for velocity derivatives
 """
@@ -149,12 +167,6 @@ g(\boldsymbol{x}, \boldsymbol{x}_p)
 \frac{\partial g(\boldsymbol{x}, \boldsymbol{x}_p)}{\partial x_i}
 $$
 """
-
-velocity_gradient_eqn_2d = [diff(vk, pk) for vk, pk in zip(velocity_eqn_2d, eval_coords_2d)]
-velocity_gradient_fcn_2d = lambdify(splat_properties_2d + eval_coords_2d, velocity_gradient_eqn_2d)
-
-velocity_gradient_eqn_3d = [diff(vk, pk) for vk, pk in zip(velocity_eqn_3d, eval_coords_3d)]
-velocity_gradient_fcn_3d = lambdify(splat_properties_3d + eval_coords_3d, velocity_gradient_eqn_3d)
 
 def velocity_derivatives(ndim):
     if ndim == 2:

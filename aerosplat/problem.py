@@ -60,8 +60,8 @@ class AeroSplatProblem:
         return AeroSplat(
             position=point if point else self.point_at_random(),
             velocity=np.array(np.random.normal(size=self.ndims)), #np.zeros(self.ndims),
-            scale=0.2*np.array(np.random.uniform(size=self.ndims)), #0.1*np.ones(self.ndims),
-            orientation=[np.random.uniform(-3.141, 3.141)] if self.ndims == 2 else [1, 0, 0, 0]
+            scale=10.0*np.array(np.random.uniform(size=self.ndims)), #0.1*np.ones(self.ndims),
+            orientation=[np.pi * np.random.uniform(-1, 1)] if self.ndims == 2 else [1, 0, 0, 0]
             # TODO: random orientation in 3D mode
         )
 
@@ -72,24 +72,45 @@ class AeroSplatProblem:
             point = self.point_at_weights(*weights[i, :])[:self.ndims]
             self.splats.append(self.random_splat(point))
 
+    def velocity_at(self, point):
+        return sum([splat.velocity_at(point) for splat in self.splats])
+
     def velocity_on_grid(self, nx=10, ny=10, nz=1):
         grid = self.point_grid(nx, ny, nz)
         velocity_grid = np.zeros(grid.shape)
         if self.ndims == 2:
-            velocity_grid = [[sum([splat.velocity_at(grid[j, k]) for splat in self.splats]) 
-                              for k in range(nx)] for j in range(ny)]
+            velocity_grid = [[self.velocity_at(grid[j, k]) for k in range(nx)] for j in range(ny)]
         else:
-            velocity_grid = [[[sum([splat.velocity_at(grid[i, j, k]) for splat in self.splats]) 
-                              for k in range(nx)] for j in range(ny)] for i in range(nz)]
+            velocity_grid = [[[self.velocity_at(grid[i, j, k]) for k in range(nx)] for j in range(ny)] for i in range(nz)]
         return np.array(velocity_grid)
     
+    def velocity_gradient_at(self, point):
+        return sum([splat.velocity_gradient_at(point) for splat in self.splats])
+
     def velocity_gradient_on_grid(self, nx=10, ny=10, nz=1):
         grid = self.point_grid(nx, ny, nz)
         gradient_grid = np.zeros(grid.shape)
         if self.ndims == 2:
-            gradient_grid = [[sum([splat.velocity_gradient_at(grid[j, k]) for splat in self.splats]) 
-                              for k in range(nx)] for j in range(ny)]
+            gradient_grid = [[self.velocity_gradient_at(grid[j, k]) for k in range(nx)] for j in range(ny)]
         else:
-            gradient_grid = [[[sum([splat.velocity_gradient_at(grid[i, j, k]) for splat in self.splats]) 
-                              for k in range(nx)] for j in range(ny)] for i in range(nz)]
+            gradient_grid = [[[self.velocity_gradient_at(grid[i, j, k]) for k in range(nx)] for j in range(ny)] for i in range(nz)]
         return np.array(gradient_grid)
+    
+    def velocity_gradient_matrix_at(self, point):
+        return sum([splat.velocity_gradient_matrix_at(point) for splat in self.splats])
+
+    def velocity_gradient_matrix_on_grid(self, nx=10, ny=10, nz=1):
+        grid = self.point_grid(nx, ny, nz)
+        gradient_matrix_grid = np.zeros(list(grid.shape) + [self.ndims])
+        if self.ndims == 2:
+            gradient_matrix_grid = [[self.velocity_gradient_matrix_at(grid[j, k]) for k in range(nx)] for j in range(ny)]
+        else:
+            gradient_matrix_grid = [[[self.velocity_gradient_matrix_at(grid[i, j, k]) for k in range(nx)] for j in range(ny)] for i in range(nz)]
+        return np.array(gradient_matrix_grid)
+
+    def euler_equation_terms_at(self, point):
+        velocity = self.velocity_at(point)
+        velocity_gradient_matrix = self.velocity_gradient_matrix_at(point)
+        velocity_gradient = [velocity_gradient_matrix[i, i] for i in range(self.ndims)]
+        return np.append(velocity @ velocity_gradient_matrix, np.sum(velocity_gradient))
+    
