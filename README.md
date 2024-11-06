@@ -276,10 +276,45 @@ where in this case $t$ is used to represent time (TODO: de-conflict with $t$ abo
 \nabla = \frac{\partial}{\partial x} \hat{\boldsymbol{i}} + \frac{\partial}{\partial y} \hat{\boldsymbol{j}} + \frac{\partial}{\partial z} \hat{\boldsymbol{k}} ,
 ```
 $w$ is thermodynamic work, or an internal source term, and $\boldsymbol{g}$ is body acceleration.
-If we assume that the latter two variables are zero, and expand the material derivative, then the first equation becomes
+If we assume that $w$ and $\boldsymbol{g}$ are zero, and expand the material derivative, then the first equation becomes
 ```math
-\frac{\partial \boldsymbol{v}}{\partial t} + (\boldsymbol{v} \cdot \nabla) \boldsymbol{v} = \boldsymbol{0}
+\frac{\partial \boldsymbol{v}}{\partial t} + (\boldsymbol{v} \cdot \nabla) \boldsymbol{v} = \boldsymbol{0}.
 ```
+If our intent is to solve for steady-state flow, then the time derivative $\frac{\partial \boldsymbol{v}}{\partial t}$ should be approximately zero.
+In this case, we can expand into matrix form and define an error vector term
+```math
+\boldsymbol{e}_v = 
+\begin{bmatrix}
+( \boldsymbol{v} \cdot \nabla ) \boldsymbol{v} \\
+\nabla \cdot \boldsymbol{v}
+\end{bmatrix}
+=
+\begin{bmatrix}
+v_x \frac{\partial v_x}{\partial x} + v_y \frac{\partial v_x}{\partial y} + v_z \frac{\partial v_x}{\partial z} \\
+v_x \frac{\partial v_y}{\partial x} + v_y \frac{\partial v_y}{\partial y} + v_z \frac{\partial v_y}{\partial z} \\
+v_x \frac{\partial v_z}{\partial x} + v_y \frac{\partial v_z}{\partial y} + v_z \frac{\partial v_z}{\partial z} \\
+\frac{\partial v_x}{\partial x} + \frac{\partial v_y}{\partial y} + \frac{\partial v_z}{\partial z}
+\end{bmatrix},
+```
+which we can minimize the squared terms $\boldsymbol{e}_v \cdot \boldsymbol{e}_v$ for some set of evaluation points.
 
-
-
+Velocity gradients at the $k^{th}$ evaluation point may be calculated using the sum of the gradients for each of the splats, or
+```math
+\nabla \boldsymbol{v}_k = \nabla \sum_{i=1}^n \boldsymbol{v}_i g_{ik}.
+```
+Noting that the velocity $\boldsymbol{v}_i$ at the center of the splat is treated as constant, the gradient only need be calculated on the Gaussian $g_{ik}$
+```math
+\nabla \boldsymbol{v}_k = \sum_{i=1}^n \boldsymbol{v}_i \left\{ \nabla g_{ik} \right\}^T,
+```
+and using the covariance $\mathbf{\Sigma}_i$ representation we defined earlier, we can obtain
+```math
+\nabla g_{ik} = -2 \left[\nabla d_{ik} \right] \mathbf{\Sigma} d_{ik} g_{ik}
+```
+```math
+\left[ \nabla d_{ik} \right] =
+\begin{bmatrix}
+x_k & 0 & 0 \\
+0 & y_k & 0 \\
+0 & 0 & z_k
+\end{bmatrix}
+```
