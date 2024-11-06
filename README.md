@@ -246,16 +246,40 @@ and correspondingly the error variance
 ```math
 \lambda_b(t) = \boldsymbol{e}_b(t) \cdot \boldsymbol{e}_b(t).
 ```
-To integrate this error variance ...
-
+To integrate this error variance we can approximate the integral as a summation over $m$ points along the boundary line
+```math
+L_b \approx \frac{l_b}{m} \sum_{k=1}^m \lambda_b\left( t(k) \right)
+```
+where $t(k)$ is a normalized value between 0 and 1 for the $k^{th}$ point, where these values may be sampled over uniform intervals, or selected from a random distribution.
 
 <!--
 ```math
 \boldsymbol{v}(t) = \sum_{i=1}^n \boldsymbol{v}_i e^{-0.5 \boldsymbol{d}_{ib}(t)^T \mathbf{\Sigma}_i \boldsymbol{d}_{ib}(t)}
 ```
--->
 
 In the case of a surface boundary ...
+-->
+
 
 ### Volume Error
+
+Over the entire volume, the flow at any point must satisfy some partial differential equation (PDE).
+As a simple example, we will use incompressible Euler equations with constant or uniform density, or
+```math
+\frac{D \boldsymbol{v}}{D t} = -\nabla w + \boldsymbol{g}
+```
+```math
+\nabla \cdot \boldsymbol{v} = 0
+```
+where in this case $t$ is used to represent time (TODO: de-conflict with $t$ above), the operator
+```math
+\nabla = \frac{\partial}{\partial x} \hat{\boldsymbol{i}} + \frac{\partial}{\partial y} \hat{\boldsymbol{j}} + \frac{\partial}{\partial z} \hat{\boldsymbol{k}} ,
+```
+$w$ is thermodynamic work, or an internal source term, and $\boldsymbol{g}$ is body acceleration.
+If we assume that the latter two variables are zero, and expand the material derivative, then the first equation becomes
+```math
+\frac{\partial \boldsymbol{v}}{\partial t} + (\boldsymbol{v} \cdot \nabla) \boldsymbol{v} = \boldsymbol{0}
+```
+
+
 
