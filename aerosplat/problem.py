@@ -1,7 +1,7 @@
 # Create Problem Definition Class
 import numpy as np
 import random
-from .functions import point_at_random, point_at_weights
+from .functions import length_scale, point_at_random, point_at_weights
 
 class AeroSplatProblem:
     domain_x = np.zeros(2)
@@ -31,8 +31,9 @@ class AeroSplatProblem:
     
     @property
     def length_scale(self):
-        domain = self.domain
-        return np.norm([domain[k, 1] - domain[k, 0] for k in range(3)])
+        return length_scale(self.domain)
+        #domain = self.domain
+        #return np.linalg.norm([domain[k, 1] - domain[k, 0] for k in range(3)])
 
     @property
     def velocity_scale(self):

@@ -31,13 +31,16 @@ class AeroSplatSolution:
         return point_at_weights(self.domain, weight_x, weight_y, weight_z)
 
     def random_splat(self, point=None):
-        ndims = self.ndims
-        return AeroSplat(
-            position=point if point else self.point_at_random(),
-            velocity=np.array(np.random.normal(size=ndims)),
-            scale=10.0*np.array(np.random.uniform(size=ndims)),
-            orientation=[np.pi * np.random.uniform(-1, 1)] if ndims == 2 else random_unit_quaternion()
-        )
+        random_splat = AeroSplat.random_in(self.domain)
+        random_splat.position = point
+        return random_splat
+        #ndims = self.ndims
+        #return AeroSplat(
+        #    position=point if point else self.point_at_random(),
+        #    velocity=np.array(np.random.normal(size=ndims)),
+        #    scale=10.0*np.array(np.random.uniform(size=ndims)),
+        #    orientation=[np.pi * np.random.uniform(-1, 1)] if ndims == 2 else random_unit_quaternion()
+        #)
 
     def spawn_random_splats(self, quantity, clear=True):
         self.splats = [] if clear else self.splats
