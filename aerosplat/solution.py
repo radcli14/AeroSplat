@@ -20,6 +20,28 @@ class AeroSplatSolution:
         if spawn:
             self.spawn_random_splats(spawn)
 
+    @classmethod
+    def from_normalized_array(cls, array: np.array, domain: np.ndarray):
+        # Initialize the solution we will build from the provided array, initially without splats
+        solution = cls(domain)
+        solution.splats = []
+
+        # Add the encoded splats to the solution
+        ndims = 2 if len(domain) <= 2 or domain[2, 0] == domain[2, 1] else 3
+        n_per_array = 8 if ndims == 2 else 14
+        for i in range(len(array) / n_per_array):
+            theta = array[i*n_per_array:(i+1):n_per_array]
+            solution.splats.append(AeroSplat.from_normalized_array(theta, domain))
+
+        return solution
+
+    @property
+    def as_normalized_array(self):
+        normalized_array = []
+        for splat in self.splats:
+            normalized_array += list(splat.as_normalized_array(self.domain))
+        return np.array(normalized_array)
+
     @property
     def ndims(self):
         return 2 if self.domain[2, 0] == self.domain[2, 1] else 3
@@ -30,23 +52,19 @@ class AeroSplatSolution:
     def point_at_weights(self, weight_x, weight_y, weight_z=0):
         return point_at_weights(self.domain, weight_x, weight_y, weight_z)
 
+    def random_points(self, quantity: int=1):
+        # weights are from latin hypercube sampler
+        return [self.point_at_weights(*weights)[:self.ndims] for weights in self.sampler.random(n=quantity)]
+
     def random_splat(self, point=None):
         random_splat = AeroSplat.random_in(self.domain)
         random_splat.position = point
         return random_splat
-        #ndims = self.ndims
-        #return AeroSplat(
-        #    position=point if point else self.point_at_random(),
-        #    velocity=np.array(np.random.normal(size=ndims)),
-        #    scale=10.0*np.array(np.random.uniform(size=ndims)),
-        #    orientation=[np.pi * np.random.uniform(-1, 1)] if ndims == 2 else random_unit_quaternion()
-        #)
 
     def spawn_random_splats(self, quantity, clear=True):
         self.splats = [] if clear else self.splats
-        weights = self.sampler.random(n=quantity)  # weights are from latin hypercube sampler
-        for i in range(quantity):
-            point = self.point_at_weights(*weights[i, :])[:self.ndims]
+        points = self.random_points(quantity)
+        for point in points:
             self.splats.append(self.random_splat(point))
 
     def velocity_at(self, point):

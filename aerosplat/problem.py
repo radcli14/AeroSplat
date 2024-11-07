@@ -32,14 +32,12 @@ class AeroSplatProblem:
     @property
     def length_scale(self):
         return length_scale(self.domain)
-        #domain = self.domain
-        #return np.linalg.norm([domain[k, 1] - domain[k, 0] for k in range(3)])
 
     @property
     def velocity_scale(self):
         scale = 0
         for boundary in self.boundaries:
-            scale = max(scale, np.norm(boundary.velocity))
+            scale = max(scale, np.linalg.norm(boundary.velocity))
         return scale
 
     @property
