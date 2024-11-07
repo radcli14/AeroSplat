@@ -1,13 +1,13 @@
 # Create Problem Definition Class
 import numpy as np
 import random
+from .functions import point_at_random, point_at_weights
 
 class AeroSplatProblem:
     domain_x = np.zeros(2)
     domain_y = np.zeros(2)
     domain_z = np.zeros(2)
-    
-    #splats = []
+
     boundaries = []
     
     def __init__(self, domain_x=[0, 0], domain_y=[0, 0], domain_z=[0, 0], boundaries=[]):
@@ -26,19 +26,30 @@ class AeroSplatProblem:
         return repr_str
     
     @property
+    def domain(self):
+        return np.array([self.domain_x, self.domain_y, self.domain_z])
+    
+    @property
+    def length_scale(self):
+        domain = self.domain
+        return np.norm([domain[k, 1] - domain[k, 0] for k in range(3)])
+
+    @property
+    def velocity_scale(self):
+        scale = 0
+        for boundary in self.boundaries:
+            scale = max(scale, np.norm(boundary.velocity))
+        return scale
+
+    @property
     def ndims(self):
         return 3 if self.domain_z[1] != self.domain_z[0] else 2
     
     def point_at_random(self):
-        x = random.uniform(*self.domain_x)
-        y = random.uniform(*self.domain_y)
-        z = random.uniform(*self.domain_z)
-        return np.array([x, y, z]) if self.ndims == 3 else np.array([x, y])
-    
+        return point_at_random(self.domain)
+
     def point_at_weights(self, weight_x, weight_y, weight_z=0):
-        weights = weight_x, weight_y, weight_z
-        domains = self.domain_x, self.domain_y, self.domain_z
-        return [(1-w)*d[0] + w*d[1] for w, d in zip(weights, domains)]
+        return point_at_weights(self.domain, weight_x, weight_y, weight_z)
 
     def point_grid(self, nx=10, ny=10, nz=1):
         grid = [[[self.point_at_weights(k/(nx-1), j/(ny-1), i/(nz-1) if nz > 1 else 0) 
