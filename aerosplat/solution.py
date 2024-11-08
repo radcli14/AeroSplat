@@ -29,8 +29,9 @@ class AeroSplatSolution:
         # Add the encoded splats to the solution
         ndims = 2 if len(domain) <= 2 or domain[2, 0] == domain[2, 1] else 3
         n_per_array = 8 if ndims == 2 else 14
-        for i in range(len(array) / n_per_array):
-            theta = array[i*n_per_array:(i+1):n_per_array]
+        n_splats = int(len(array) / n_per_array)
+        reshaped_array = array.reshape(n_splats, n_per_array)
+        for theta in reshaped_array:
             solution.splats.append(AeroSplat.from_normalized_array(theta, domain))
 
         return solution

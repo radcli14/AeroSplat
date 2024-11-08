@@ -17,6 +17,10 @@ class AeroSplat:
         
         # Make sure the velocity vector is a unit vector
         self.velocity_vector = self.velocity_vector / np.linalg.norm(self.velocity_vector) 
+
+        # Make sure the orientation has valid dimension
+        if not self.orientation.shape:
+            self.orientation = np.array([self.orientation])  # bumps from zero order to first order
     
     def __repr__(self):
         return f"AeroSplat(position={self.position}, velocity={self.velocity}, scale={self.scale}, orientation={self.orientation})"

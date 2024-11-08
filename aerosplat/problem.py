@@ -32,6 +32,10 @@ class AeroSplatProblem:
     @property
     def length_scale(self):
         return length_scale(self.domain)
+    
+    @property
+    def total_boundary_length(self):
+        return sum([boundary.length for boundary in self.boundaries])
 
     @property
     def velocity_scale(self):

@@ -15,8 +15,14 @@ class LineBoundary:
     def __repr__(self):
         return f"LineBoundary(point0={self.point0}, point1={self.point1}, velocity={self.velocity})"
     
+    @property
+    def length(self):
+        return np.linalg.norm(self.point1 - self.point0)
+
     def point_at(self, weighted_distance):
         return (1 - weighted_distance) * self.point0 + weighted_distance * self.point1
     
     def point_at_random(self):
         return self.point_at(random.uniform(0, 1))
+
+    
