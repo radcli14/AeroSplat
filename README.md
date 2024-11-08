@@ -1,5 +1,8 @@
-# AeroSplat
-Experimenting with splatting methods for aerodynamics analysis
+# ![Header Image](images/headerSmallMargins.png)
+
+In 2023 the world of 3D photogrammetric scanning was revolutionized by the introduction of [Gaussian Splatting](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/).
+This, along with Neural Radiance Field (NeRF) algorithms innovated on existing processes by representing a scene as a continuous volumetric function, not as fixed surface mesh.
+The project here is an experiment with adapting splatting methods to aerodynamics analysis, where a volumetric domain and surface boundaries are defined, and we intend to calculate pressure and forces acting on an object.
 
 ## Gaussian Curve
 
