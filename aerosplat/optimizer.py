@@ -48,9 +48,10 @@ class AeroSplatOptimizer:
                 point = boundary.point_at_random()
                 velocity = solution.velocity_at(point)
                 velocity_error = boundary.velocity - velocity
-                boundary_loss += boundary_length * np.linalg.norm(velocity_error)
-                
-        return boundary_loss / n_points / n_boundaries / self.problem.total_boundary_length / self.problem.velocity_scale
+                # Use squared L2 norm as derived in the README: λ = e·e
+                boundary_loss += boundary_length * np.linalg.norm(velocity_error)**2
+
+        return boundary_loss / n_points / n_boundaries / self.problem.total_boundary_length / self.problem.velocity_scale**2
 
     def volume_loss(self, solution: AeroSplatSolution = None):
         solution = self.solutions[-1] if not solution else solution
@@ -58,12 +59,22 @@ class AeroSplatOptimizer:
         n_points = self.configuration["points_in_volume"]
         points = solution.random_points(n_points)
 
-        compressibility_loss = 0.0
+        volume_loss = 0.0
         for point in points:
             euler_terms = solution.euler_equation_terms_at(point)
-            compressibility_loss += euler_terms[-1]**2
-            
-        return compressibility_loss / n_points / self.problem.velocity_scale**2
+            # Momentum residual: (v·∇)v components (all terms except last)
+            # Normalised by v_scale^4 so it is dimensionally consistent with
+            # the continuity term normalised by v_scale^2 below.
+            momentum_residual = np.sum(euler_terms[:-1]**2) / self.problem.velocity_scale**2
+            # Velocity-divergence (incompressibility): (∇·v)²
+            continuity_residual = euler_terms[-1]**2
+            # Mass-flux divergence: (∇·(ρv))² — enforces mass conservation when
+            # density varies across the domain.
+            mass_flux_residual = solution.mass_flux_divergence_at(point)**2
+
+            volume_loss += momentum_residual + continuity_residual + mass_flux_residual
+
+        return volume_loss / n_points / self.problem.velocity_scale**2
 
     def loss(self, solution: AeroSplatSolution = None):
         boundary_loss = self.boundary_loss(solution)
@@ -79,19 +90,25 @@ class AeroSplatOptimizer:
         c = self.configuration["step_size_for_update"]
         lam = self.configuration["gradient_weight"]
 
-        # Prior result
         theta = self.normalized_array()
-        theta_loss = sum(self.history[-1])
 
-        # Solution to estimate a gradient
-        delta_theta_p = b * self.bernoulli_sequence()
-        theta_p = theta + delta_theta_p
-        solution_p = AeroSplatSolution.from_normalized_array(theta_p, self.problem.domain)
-        solution_p_loss = self.loss(solution_p)
-        delta_loss = solution_p_loss - theta_loss
-        
-        # Update to gradient estimate
-        self._gradient_estimate = lam * (-delta_loss / delta_theta_p) + (1 - lam) * self._gradient_estimate
+        # Two-sided SPSA: evaluate loss at θ+δ and θ-δ for the same random
+        # perturbation direction.  The central-difference estimate
+        #   ĝ = (L(θ+δ) - L(θ-δ)) / (2δ)
+        # has O(δ²) bias vs. O(δ) for the one-sided form, giving a much
+        # cleaner gradient signal with the same number of random draws.
+        delta_theta = b * self.bernoulli_sequence()
+
+        solution_p = AeroSplatSolution.from_normalized_array(theta + delta_theta, self.problem.domain)
+        solution_m = AeroSplatSolution.from_normalized_array(theta - delta_theta, self.problem.domain)
+        loss_p = self.loss(solution_p)
+        loss_m = self.loss(solution_m)
+
+        # Central-difference gradient estimate; negate because we descend.
+        gradient_estimate = -(loss_p - loss_m) / (2.0 * delta_theta)
+
+        # Exponential moving average smooths noise without killing adaptability.
+        self._gradient_estimate = lam * gradient_estimate + (1 - lam) * self._gradient_estimate
 
         # Create the next solution
         theta_next = theta + c * self._gradient_estimate

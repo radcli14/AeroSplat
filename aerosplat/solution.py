@@ -27,8 +27,10 @@ class AeroSplatSolution:
         solution.splats = []
 
         # Add the encoded splats to the solution
+        # 2D splat: 9 params (pos×2, vel_dir×2, log_mag, log_mass, log_scale×2, angle)
+        # 3D splat: 15 params (pos×3, vel_dir×3, log_mag, log_mass, log_scale×3, quat×4)
         ndims = 2 if len(domain) <= 2 or domain[2, 0] == domain[2, 1] else 3
-        n_per_array = 8 if ndims == 2 else 14
+        n_per_array = 9 if ndims == 2 else 15
         n_splats = int(len(array) / n_per_array)
         reshaped_array = array.reshape(n_splats, n_per_array)
         for theta in reshaped_array:
@@ -67,6 +69,17 @@ class AeroSplatSolution:
         points = self.random_points(quantity)
         for point in points:
             self.splats.append(self.random_splat(point))
+
+    def density_at(self, point):
+        """Mass density field: ρ(x) = Σ mᵢ·gᵢ(x)."""
+        return sum([float(splat.mass) * splat.gaussian_at(point) for splat in self.splats])
+
+    def mass_flux_divergence_at(self, point):
+        """Divergence of mass flux: ∇·(ρv) = Σᵢ mᵢ·(vᵢ·∇gᵢ).
+
+        Should be zero for steady compressible flow (mass conservation).
+        """
+        return sum([splat.mass_flux_divergence_at(point) for splat in self.splats])
 
     def velocity_at(self, point):
         return sum([splat.velocity_at(point) for splat in self.splats])

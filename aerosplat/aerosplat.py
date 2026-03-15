@@ -8,43 +8,50 @@ class AeroSplat:
     position = np.zeros(3)
     velocity_vector = np.array([1, 0, 0])
     velocity_magnitude = 0
+    mass = 1.0
     scale = np.ones(3)
     orientation = np.array([1, 0, 0, 0])
-    
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, np.array(value))
-        
+
         # Make sure the velocity vector is a unit vector
-        self.velocity_vector = self.velocity_vector / np.linalg.norm(self.velocity_vector) 
+        self.velocity_vector = self.velocity_vector / np.linalg.norm(self.velocity_vector)
 
         # Make sure the orientation has valid dimension
         if not self.orientation.shape:
             self.orientation = np.array([self.orientation])  # bumps from zero order to first order
-    
+
     def __repr__(self):
-        return f"AeroSplat(position={self.position}, velocity={self.velocity}, scale={self.scale}, orientation={self.orientation})"
-    
+        return f"AeroSplat(position={self.position}, velocity={self.velocity}, mass={self.mass}, scale={self.scale}, orientation={self.orientation})"
+
     @classmethod
     def random_in(cls, domain: np.ndarray, velocity_scale: float=1.0):
         ndims = 2 if len(domain) == 2 or domain[2, 0] == domain[2, 1] else 3
+        # Use scale ~ 2/L so splats initially span ~half the domain, giving meaningful
+        # gradient signal at distant evaluation points.
         return cls(
             position = point_at_random(domain),
             velocity_vector = np.random.normal(size=ndims),
             velocity_magnitude = velocity_scale * np.exp(np.random.normal()),
-            scale = 10 / length_scale(domain) * np.exp(np.random.normal(size=ndims)),
+            mass = np.exp(np.random.normal()),
+            scale = 2.0 / length_scale(domain) * np.exp(np.random.normal(size=ndims)),
             orientation = [np.pi * np.random.uniform(-1, 1)] if ndims == 2 else random_unit_quaternion()
         )
 
     @classmethod
     def from_normalized_array(cls, theta: np.array, domain: np.ndarray):
-        ndims = 2 if len(theta) == 8 else 3
+        # 2D: 9 params (pos×2, vel_dir×2, log_mag, log_mass, log_scale×2, angle)
+        # 3D: 15 params (pos×3, vel_dir×3, log_mag, log_mass, log_scale×3, quat×4)
+        ndims = 2 if len(theta) == 9 else 3
         return cls(
             position = point_at_weights(domain, *theta[:ndims])[:ndims],
             velocity_vector = theta[ndims:2*ndims],
             velocity_magnitude = np.exp(theta[2*ndims]),
-            scale = np.exp(theta[2*ndims+1:3*ndims+1]),
-            orientation = theta[3*ndims+1] if ndims == 2 else normalize_quaternion(theta[3*ndims+1:])
+            mass = np.exp(theta[2*ndims + 1]),
+            scale = np.exp(theta[2*ndims+2:3*ndims+2]),
+            orientation = theta[3*ndims+2] if ndims == 2 else normalize_quaternion(theta[3*ndims+2:])
         )
 
     def as_normalized_array(self, domain: np.ndarray):
@@ -52,6 +59,7 @@ class AeroSplat:
         normalized_array += list(weights_for_point(domain, self.position))
         normalized_array += list(self.velocity_vector)
         normalized_array.append(np.log(self.velocity_magnitude))
+        normalized_array.append(np.log(float(self.mass)))
         normalized_array += list(np.log(self.scale))
         normalized_array += list(self.orientation)
         return normalized_array
@@ -113,3 +121,11 @@ class AeroSplat:
     def differential_velocity_at(self, position):
         f = diff_velocity_fcn_2d if self.is2d else diff_velocity_fcn_3d
         return f(*self.properties_at(position))
+
+    def mass_flux_divergence_at(self, position):
+        """Divergence of this splat's mass-flux contribution: ∇·(m·v·g) = m·(v·∇g).
+
+        For steady compressible flow, ∇·(ρv) = 0 requires the sum over all
+        splats of this term to vanish.
+        """
+        return float(self.mass) * np.dot(self.velocity, self.gaussian_gradient_at(position))
